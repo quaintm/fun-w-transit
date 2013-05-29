@@ -5,11 +5,20 @@ import numpy
 from urllib import urlopen
 from json import load
 from time import time
+import datetime
 
-roundtime = int(time())
+#defines the arrival time as the first monday following the day the program is run, 
+#at 8 am, and converts to unix time
+
+wkdy = datetime.date.today().weekday()
+monday = datetime.date.today() + datetime.timedelta(days=7-wkdy)
+arrivetime = datetime.time(8,0,0)
+arrivedate = datetime.datetime.combine(monday,atime).timetuple()
+roundtime = int(time.mktime(arrivedate))
+
 END_ZIP = raw_input('Destination zip:')
 
-def getStatus():
+def getStatus(startzip, destination, roundtime):
     url = ('http://maps.googleapis.com/maps/api/directions/'
     'json?origin=%s&destination=%s&sensor=false&departure_time'
     '=%s&mode=transit' % (startzip, END_ZIP, roundtime))
@@ -25,7 +34,7 @@ def getInfo(startzip, destination):
    
     hasResult = (status != 'ZERO_RESULTS')
     if hasResult:
-    	result = response['routes'][0]['legs'][0]
+        result = response['routes'][0]['legs'][0]
     	duration_minutes = result.duration.value
     	duration_hours = duration_minutes / 60
     	address = result.start_address
@@ -35,11 +44,12 @@ def getInfo(startzip, destination):
     return duration_hours, address
 
 results = []
-ziplist = numpy.genfromtxt('C:\Users\mquaintance\Desktop'
-    '\zips.txt', dtype=str)
+#ziplist = numpy.genfromtxt('C:\Users\mquaintance\Desktop'
+    #'\zips.txt', dtype=str)
+ziplist = ['06811','08691','10025']
 
 for i in ziplist:
-    duration, address = getInfo(x, zip)
+    duration, address = getInfo(i, END_ZIP)
     print i, duration, address
     results.append([i, duration, address])
 
