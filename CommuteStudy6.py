@@ -35,11 +35,11 @@ def getInfo(startzip, destination):
     hasResult = (status != 'ZERO_RESULTS')
     if hasResult:
         result = response['routes'][0]['legs'][0]
-    	duration_minutes = result.duration.value
-    	duration_hours = duration_minutes / 60
+    	duration_seconds = result.duration.value
+    	duration_minutes = duration_seconds / 60
     	address = result.start_address
     else:
-    	duration_hours, address = status, status
+    	duration_minutes, address = status, status
 
     return duration_hours, address
 
