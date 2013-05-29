@@ -1,58 +1,46 @@
 #! /usr/local/bin/python
 #for user-specified zip codes, queries the transit API for public transit info (intra-city only)
 
-
 import numpy
-ziplist = numpy.genfromtxt('C:\Users\mquaintance\Desktop'
-    '\zips.txt', dtype=str)
-#ziplist = ['06811','08691']
-
-import json
-import urllib
+from urllib import urlopen
+from json import load
 from time import time
-roundtime=int(time())
 
-b=raw_input('Destination zip:')
+roundtime = int(time())
+END_ZIP = raw_input('Destination zip:')
 
-def getInfo(startzip,destination):
-
-    status = []
-    
+def getStatus():
     url = ('http://maps.googleapis.com/maps/api/directions/'
     'json?origin=%s&destination=%s&sensor=false&departure_time'
-    '=%s&mode=transit' % (startzip,destination,roundtime))
-    #print url
-    response = json.load(urllib.urlopen(url))
-    status = (response['status'])
+    '=%s&mode=transit' % (startzip, END_ZIP, roundtime))
+    response = load(urlopen(url))
+    return response.status
+
+def getInfo(startzip, destination):
     
     while status == "OVER_QUERY_LIMIT": 
         print status
-        import time
         time.sleep(5)
-        url = ('http://maps.googleapis.com/maps/api/directions/'
-        'json?origin=%s&destination=%s&sensor=false&departure_time'
-        '=%s&mode=transit' % (startzip,destination,roundtime))
-        #print url
-        response = json.load(urllib.urlopen(url))
-        status = (response['status'])
+        status = getStatus()
    
-    if status == "ZERO_RESULTS":
-        return status, status
+    hasResult = (status != 'ZERO_RESULTS')
+    if hasResult:
+    	result = response['routes'][0]['legs'][0]
+    	duration_minutes = result.duration.value
+    	duration_hours = duration_minutes / 60
+    	address = result.start_address
     else:
+    	duration_hours, address = status, status
 
-        duration = (response['routes'][0]['legs'][0]['duration']['value'])
-        address = (response['routes'][0]['legs'][0]['start_address'])
-        return duration/60, address
+    return duration_hours, address
 
-x = []
 results = []
-dur=[]
-add=[]
+ziplist = numpy.genfromtxt('C:\Users\mquaintance\Desktop'
+    '\zips.txt', dtype=str)
 
-for x  in ziplist:
-    dur,add = getInfo(x, b)
-    print x,dur,add
-    results.append([x,dur,add])
+for i in ziplist:
+    duration, address = getInfo(x, zip)
+    print i, duration, address
+    results.append([i, duration, address])
 
-numpy.savetxt('transit'+'%s''.csv' % (b),results,fmt='%s',delimiter=",")
-
+numpy.savetxt('transit' + '%s.csv' % END_ZIP, results, fmt='%s', delimiter=",")
