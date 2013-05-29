@@ -13,7 +13,7 @@ import datetime
 wkdy = datetime.date.today().weekday()
 monday = datetime.date.today() + datetime.timedelta(days=7-wkdy)
 arrivetime = datetime.time(8,0,0)
-arrivedate = datetime.datetime.combine(monday,atime).timetuple()
+arrivedate = datetime.datetime.combine(monday,arrivetime).timetuple()
 roundtime = int(time.mktime(arrivedate))
 
 END_ZIP = raw_input('Destination zip:')
