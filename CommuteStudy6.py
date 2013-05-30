@@ -24,7 +24,7 @@ arrivetime = datetime.time(8,0,0)
 arrivedate = datetime.datetime.combine(monday,arrivetime).timetuple()
 roundtime = int(time.mktime(arrivedate))
 
-END_ADDRESS = raw_input('Destination address:')
+END_ADDRESS = raw_input('Destination address (no spaces!):')
 
 
 def urlSigner(rawURL):
