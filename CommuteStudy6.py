@@ -4,9 +4,8 @@
 import numpy
 from urllib import urlopen
 from json import load
-from time import time
+import time
 import datetime
-
 
 # Libraries for hashing the private key
 import sys
@@ -22,50 +21,10 @@ import urlparse
 wkdy = datetime.date.today().weekday()
 monday = datetime.date.today() + datetime.timedelta(days=7-wkdy)
 arrivetime = datetime.time(8,0,0)
-arrivedate = datetime.datetime.combine(monday,atime).timetuple()
+arrivedate = datetime.datetime.combine(monday,arrivetime).timetuple()
 roundtime = int(time.mktime(arrivedate))
 
-END_ZIP = raw_input('Destination zip:')
-
-
-def getStatus(startzip, destination, roundtime):
-    baseURL = ('http://maps.googleapis.com/maps/api/directions/'
-    'json?origin=%s&destination=%s&sensor=false&departure_time'
-    '=%s&mode=transit' % (startzip, END_ZIP, roundtime))
-    signedURL = urlSigner(baseurl)
-    response = load(urlopen(signedURL))
-    return response.status
-
-def getInfo(startzip, destination):
-    
-    # while status == "OVER_QUERY_LIMIT": 
-    #     print status
-    #     time.sleep(5)
-    #     status = getStatus()
-   
-    hasResult = (status != 'ZERO_RESULTS')
-    if hasResult:
-        result = response['routes'][0]['legs'][0]
-    	duration_minutes = result.duration.value
-    	duration_hours = duration_minutes / 60
-    	address = result.start_address
-    else:
-    	duration_hours, address = status, status
-
-    return duration_hours, address
-
-results = []
-#ziplist = numpy.genfromtxt('C:\Users\mquaintance\Desktop'
-    #'\zips.txt', dtype=str)
-ziplist = ['06811','08691','10025']
-
-for i in ziplist:
-    duration, address = getInfo(i, END_ZIP)
-    print i, duration, address
-    results.append([i, duration, address])
-
-numpy.savetxt('transit' + '%s.csv' % END_ZIP, results, fmt='%s', delimiter=",")
-
+END_ADDRESS = raw_input('Destination address:')
 
 
 def urlSigner(rawURL):
@@ -87,5 +46,45 @@ def urlSigner(rawURL):
     # Encode the binary signature into base64 for use within a URL
     encodedSignature = base64.urlsafe_b64encode(signature.digest())
     originalUrl = url.scheme + "://" + url.netloc + url.path + "?" + url.query
-    urlToPass = ("Full URL: " + originalUrl + "&signature=" + encodedSignature)
+    urlToPass = (originalUrl + "&signature=" + encodedSignature)
+
     return urlToPass
+
+
+def getInfo(startzip, destination):
+   # String together the URL using the individual start location, the central
+   # destination, and the time
+
+    baseURL = ('http://maps.googleapis.com/maps/api/directions/'
+    'json?origin=%s&destination=%s&sensor=false&departure_time'
+    '=%s&mode=transit' % (startzip, END_ADDRESS, roundtime))
+
+    # Hash the URL using HMAC function defined above
+
+    signedURL = urlSigner(baseURL)
+    response = load(urlopen(signedURL))
+    status = response['status']
+        
+    if status == 'OK':
+
+        result = response['routes'][0]['legs'][0]
+        duration_seconds = result['duration']['value']
+        duration_minutes = duration_seconds / 60
+        address = result['start_address']
+
+        return duration_minutes, address
+       
+    else: 
+        return status, 'none'
+
+results = []
+#ziplist = numpy.genfromtxt('C:\Users\mquaintance\Desktop'
+    #'\zips.txt', dtype=str)
+ziplist = ['06811','08691','10025']
+
+for i in ziplist:
+    duration, address = getInfo(i, END_ADDRESS)
+    print i, duration, address
+    results.append([i, duration, address])
+
+numpy.savetxt('transit-%s.csv' % END_ADDRESS, results, fmt='%s', delimiter=",")
